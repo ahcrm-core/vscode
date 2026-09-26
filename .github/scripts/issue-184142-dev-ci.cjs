@@ -65,7 +65,7 @@ const timer = setInterval(() => {
             screenshot('after-workspace-save.png');
             const next = windows();
             console.log('Visible windows after save:', JSON.stringify(next));
-            const confirm = next.find(item => item.title === 'Code - OSS');
+            const confirm = next.find(item => item.title === 'Code - OSS Dev');
             if (!confirm) { console.log('No separate VS Code restart confirmation identified.'); return; }
             try {
               const lines = xdotool(['getwindowgeometry', '--shell', confirm.id]);
