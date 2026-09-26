@@ -55,6 +55,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: ahcrm-core/vscode-184142-repro
+          ref: test/184142-actions
           path: repro
       - uses: actions/setup-node@v4
         with:
