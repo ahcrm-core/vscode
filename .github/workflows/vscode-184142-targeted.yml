@@ -6,6 +6,7 @@ on:
       - test/184142-targeted-ci
     paths:
       - .github/workflows/vscode-184142-targeted.yml
+      - .github/scripts/issue-184142-dev-ci.cjs
       - src/vs/workbench/api/browser/mainThreadCustomEditors.ts
       - src/vs/workbench/api/test/browser/mainThreadCustomEditors.test.ts
       - src/vs/workbench/services/extensions/common/abstractExtensionService.ts
@@ -45,3 +46,43 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y xvfb
           xvfb-run -a ./scripts/test.sh --run src/vs/workbench/api/test/browser/mainThreadCustomEditors.test.ts --run src/vs/workbench/services/extensions/test/browser/extensionService.test.ts --timeout 20000
+
+  integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: ahcrm-core/vscode-184142-repro
+          path: repro
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.0'
+      - name: Install and build Code OSS
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm --prefix build ci --ignore-scripts --no-audit --no-fund
+          node build/npm/electronTypes.ts
+          npm run electron
+          npm run transpile-client
+      - name: Package synthetic custom editor
+        run: |
+          npm --prefix repro install --no-audit --no-fund
+          mkdir -p repro/artifacts
+          npm --prefix repro run package
+      - name: Capture patched custom editor restart
+        env:
+          ELECTRON_DISABLE_SANDBOX: '1'
+          VSCODE_SKIP_PRELAUNCH: '1'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb xdotool imagemagick openbox
+          xvfb-run -a sh -c 'openbox >/dev/null 2>&1 & node .github/scripts/issue-184142-dev-ci.cjs'
+      - name: Keep diagnostic trace and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue-184142-patched-diagnostic
+          path: repro/artifacts/
+          if-no-files-found: warn
