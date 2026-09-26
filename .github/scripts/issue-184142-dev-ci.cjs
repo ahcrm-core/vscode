@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync, spawn } = require('node:child_process');
 
-const root = path.resolve(__dirname, '../../../repro');
+const root = path.resolve(__dirname, '../../repro');
 const vscodeRoot = path.resolve(__dirname, '../..');
 const artifacts = path.join(root, 'artifacts');
 const workspace = path.join(artifacts, 'probe.code-workspace');
@@ -116,7 +116,7 @@ function finish() {
   if (status === 'RESTART_OBSERVED_EDITOR_STATE_NEEDS_REVIEW' && observed.find(item => item.event === 'after_save_tab')?.dirty && !events.includes('save')) status = 'RESTART_OBSERVED_SAVE_NOT_COMPLETED';
   fs.writeFileSync(path.join(artifacts, 'result.json'), JSON.stringify({ status, workspaceFileCreated: fs.existsSync(workspace), observed, note: 'Patched Code OSS diagnostic. Verify the screenshot warning and preserved dirty tab after the real Save Workspace As/Restart Anyway transition. A green CI job alone only means the diagnostic completed.' }, null, 2));
   console.log('DIAGNOSTIC_STATUS:', status);
-  process.exit(0);
+  process.exit(status === 'SETUP_FAILED' || status === 'WORKSPACE_SAVE_NOT_REQUESTED' || status === 'INCONCLUSIVE' ? 1 : 0);
 }
 
 setTimeout(finish, 190000);
